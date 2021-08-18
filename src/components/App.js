@@ -8,18 +8,16 @@ import AddContact from "./AddContact";
 import ContactList from "./ContactList";
 import ContactDetails from "./ContactDetails";
 import DeleteContact from "./DeleteContact";
+import EditContact from "./EditContact";
 
 const App = () => {
   // const LOCAL_STORAGE_KEY = "contacts";
   const [contacts, setContacts] = useState([]);
 
 
-
-  //retrive contacts from axios
-  const retriveContact = async () => {
-    const contactsDetails = await api.get("contacts");
-
-    return contactsDetails.data;
+  const alldata = async () => {
+    const data = await api.get("/contacts");
+    return data.data;
   }
 
 
@@ -28,14 +26,30 @@ const App = () => {
 
 
 
-  const addContactHandler = (contact) => {
-    setContacts([...contacts, { ...contact, id: uuid() }])
+
+
+  const addContactHandler = async (contact) => {
+
+
+    const request = {
+      ...contact,
+      id: uuid()
+    };
+
+
+
+
+    const response = await api.post("/contacts", request);
+    setContacts([...contacts, response.data])
+    // setContacts([...contacts, { ...contact, id: uuid() }])
 
   }
 
 
 
-  const removeContactHandler = (id) => {
+  const removeContactHandler = async (id) => {
+    await api.delete(`/contacts/${id}`);
+
     const newContactList = contacts.filter(
       (contact) => {
         return contact.id !== id;
@@ -46,23 +60,26 @@ const App = () => {
   }
 
 
+  const editContactHandler = async (contact) => {
+    const response = await api.put(`/contacts/${contact.id}`, contact)
+    const { id, name, email } = response.data;
+    setContacts(
+      contacts.map((contact) => {
+
+        return contact.id === id ? { ...response.data } : contact;
+      })
+    );
+  };
+
+
 
   useEffect(() => {
-    // const retriveContacts = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
-    // if (retriveContacts) {
-    //   setContacts(retriveContacts);
-    // }
-    const showAllContact = async () => {
-      const allcontacts = await retriveContact();
-      if (allcontacts) {
-        setContacts(allcontacts);
-
-
-      }
-
-
+    const fetchAllData = async () => {
+      const getAllData = await alldata();
+      if (getAllData) setContacts(getAllData);
     }
-    showAllContact();
+
+    fetchAllData();
 
   }, [])
 
@@ -138,6 +155,13 @@ const App = () => {
 
             render={(props) =>
               (<DeleteContact {...props} removecontacthandler={removeContactHandler} />)
+            } />
+
+          <Route
+            path="/edit"
+
+            render={(props) =>
+              (<EditContact {...props} editcontacthandler={editContactHandler} />)
             } />
 
 
